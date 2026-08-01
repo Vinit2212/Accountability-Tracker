@@ -13,6 +13,7 @@ Every user follows 5 standardized daily tasks:
 3. **Eat clean** (Yes = 1 pt, Mostly = 0.5 pt, No = 0 pt)
 4. **Gym on weekdays** (Mon–Fri applicable = 1 pt; Sat–Sun excluded from required score)
 5. **Focused study or work** (≥ 5.0 hours = 1 pt)
+6. **Drink 3-4Litres of water** (Yes = 1 pt, No = 0 pt)
 
 ### Timezone & Scoring Engine
 * All calculations strictly operate in the `Asia/Kolkata` (IST) timezone.
