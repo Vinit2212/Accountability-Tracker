@@ -13,7 +13,10 @@ import ProgressCharts from '@/components/charts/progress-charts';
 import { ArrowLeft, User, Shield, Flame, Award, TrendingUp, Calendar, Lock } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
+import { useRouter } from 'next/navigation';
+
 export default function AdminUserDetailPage() {
+  const router = useRouter();
   const params = useParams();
   const userId = (params?.id as string) || '';
 
@@ -28,6 +31,7 @@ export default function AdminUserDetailPage() {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
 
+        let activeAdminProfile = DEMO_ADMIN_PROFILE;
         if (user) {
           const { data: adminProf } = await supabase
             .from('profiles')
@@ -35,7 +39,21 @@ export default function AdminUserDetailPage() {
             .eq('id', user.id)
             .maybeSingle();
 
-          if (adminProf) setCurrentAdmin(adminProf);
+          if (adminProf) activeAdminProfile = adminProf as Profile;
+        } else if (typeof window !== 'undefined') {
+          const sess = localStorage.getItem('lumnicore_session');
+          if (sess) {
+            try {
+              const parsed = JSON.parse(sess);
+              if (parsed.user) activeAdminProfile = parsed.user;
+            } catch {}
+          }
+        }
+        setCurrentAdmin(activeAdminProfile);
+
+        if (activeAdminProfile.role !== 'admin') {
+          router.push('/dashboard');
+          return;
         }
 
         // Load profile by id

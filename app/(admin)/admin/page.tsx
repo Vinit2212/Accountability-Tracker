@@ -22,7 +22,10 @@ import { getISTDateString } from '@/lib/timezone';
 import { calculateStreaks, calculateMostMissedTask } from '@/lib/scoring';
 import { createClient } from '@/lib/supabase/client';
 
+import { useRouter } from 'next/navigation';
+
 export default function AdminDashboard() {
+  const router = useRouter();
   const [currentAdmin, setCurrentAdmin] = useState<Profile>(DEMO_ADMIN_PROFILE);
   const [profilesList, setProfilesList] = useState<Profile[]>([]);
   const [checkinsList, setCheckinsList] = useState<DailyCheckin[]>([]);
@@ -73,6 +76,12 @@ export default function AdminDashboard() {
         }
 
         setCurrentAdmin(activeAdminProfile);
+
+        // Security check: If current user is not an admin, redirect to user dashboard
+        if (activeAdminProfile.role !== 'admin') {
+          router.push('/dashboard');
+          return;
+        }
 
         // Fetch Profiles & Checkins from Supabase
         const { data: dbProfiles } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });

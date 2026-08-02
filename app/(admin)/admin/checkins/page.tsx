@@ -16,7 +16,10 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
+import { useRouter } from 'next/navigation';
+
 export default function AdminCheckinsPage() {
+  const router = useRouter();
   const [currentAdmin, setCurrentAdmin] = useState<Profile>(DEMO_ADMIN_PROFILE);
   const [checkinsWithProfiles, setCheckinsWithProfiles] = useState<CheckinWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,6 +56,11 @@ export default function AdminCheckinsPage() {
           }
         }
         setCurrentAdmin(activeAdminProfile);
+
+        if (activeAdminProfile.role !== 'admin') {
+          router.push('/dashboard');
+          return;
+        }
 
         // Fetch from Supabase
         const { data: dbCheckins } = await supabase

@@ -96,6 +96,8 @@ export default function CheckinForm({ initialData, onSave }: CheckinFormProps) {
     mood,
   });
 
+  const isEditing = Boolean(initialData);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
@@ -119,7 +121,7 @@ export default function CheckinForm({ initialData, onSave }: CheckinFormProps) {
         mood,
         daily_note: dailyNote,
       });
-      setSuccessMessage('Today’s check-in saved successfully!');
+      setSuccessMessage(isEditing ? 'Today’s check-in updated successfully!' : 'Today’s check-in saved successfully!');
       router.refresh();
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to submit check-in.');
@@ -135,10 +137,12 @@ export default function CheckinForm({ initialData, onSave }: CheckinFormProps) {
         <div className="border-b border-slate-800 pb-4">
           <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-sky-400" />
-            Daily Check-in for {todayIST}
+            {isEditing ? `Edit Today’s Check-in (${todayIST})` : `Daily Check-in for ${todayIST}`}
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Asia/Kolkata timezone • Submit once daily • Edits allowed until midnight IST
+            {isEditing 
+              ? 'You have already submitted a log for today. Edits will overwrite your previous log.' 
+              : 'Asia/Kolkata timezone • Submit once daily • Edits allowed until midnight IST'}
           </p>
         </div>
 
@@ -316,7 +320,9 @@ export default function CheckinForm({ initialData, onSave }: CheckinFormProps) {
           disabled={submitting}
           className="w-full py-3 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-lg shadow transition-colors disabled:opacity-50 text-sm"
         >
-          {submitting ? 'Saving Check-in...' : 'Submit Today’s Check-in'}
+          {submitting 
+            ? (isEditing ? 'Updating Check-in...' : 'Saving Check-in...') 
+            : (isEditing ? 'Update Today’s Check-in' : 'Submit Today’s Check-in')}
         </button>
 
         {/* Success Message display right below the submit button */}

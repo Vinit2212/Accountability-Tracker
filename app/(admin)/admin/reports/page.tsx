@@ -20,7 +20,10 @@ import {
   Cell,
 } from 'recharts';
 
+import { useRouter } from 'next/navigation';
+
 export default function AdminReportsPage() {
+  const router = useRouter();
   const [currentAdmin, setCurrentAdmin] = useState<Profile>(DEMO_ADMIN_PROFILE);
   const [groupCheckins, setGroupCheckins] = useState<CheckinWithProfile[]>([]);
   const [profilesList, setProfilesList] = useState<Profile[]>([]);
@@ -32,6 +35,7 @@ export default function AdminReportsPage() {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
 
+        let activeAdminProfile = DEMO_ADMIN_PROFILE;
         if (user) {
           const { data: adminProf } = await supabase
             .from('profiles')
@@ -39,7 +43,21 @@ export default function AdminReportsPage() {
             .eq('id', user.id)
             .maybeSingle();
 
-          if (adminProf) setCurrentAdmin(adminProf);
+          if (adminProf) activeAdminProfile = adminProf as Profile;
+        } else if (typeof window !== 'undefined') {
+          const sess = localStorage.getItem('lumnicore_session');
+          if (sess) {
+            try {
+              const parsed = JSON.parse(sess);
+              if (parsed.user) activeAdminProfile = parsed.user;
+            } catch {}
+          }
+        }
+        setCurrentAdmin(activeAdminProfile);
+
+        if (activeAdminProfile.role !== 'admin') {
+          router.push('/dashboard');
+          return;
         }
 
         const { data: dbProfiles } = await supabase.from('profiles').select('*');

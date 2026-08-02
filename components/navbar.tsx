@@ -41,11 +41,11 @@ export default function Navbar({ userRole = 'user', userEmail, userName }: Navba
   ];
 
   const adminNavItems = [
+    { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { label: 'Today', href: '/today', icon: CheckSquare },
     { label: 'Admin Overview', href: '/admin', icon: ShieldAlert },
-    { label: 'Users', href: '/admin/users', icon: Users },
-    { label: 'Check-ins', href: '/admin/checkins', icon: FileSpreadsheet },
+    { label: 'Check-ins Audit', href: '/admin/checkins', icon: FileSpreadsheet },
     { label: 'Reports', href: '/admin/reports', icon: BarChart3 },
-    { label: 'My Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { label: 'Profile', href: '/profile', icon: User },
   ];
 

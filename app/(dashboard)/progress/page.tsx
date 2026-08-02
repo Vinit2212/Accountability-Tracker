@@ -3,10 +3,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Navbar from '@/components/navbar';
 import { DailyCheckin, Profile } from '@/lib/types';
-import { generateDemoCheckins, DEMO_USER_PROFILE } from '@/lib/mockData';
+import { DEMO_USER_PROFILE } from '@/lib/mockData';
 import { calculateStreaks, calculateMostMissedTask } from '@/lib/scoring';
 import { getISTDateString } from '@/lib/timezone';
 import ProgressCharts from '@/components/charts/progress-charts';
+import { createClient } from '@/lib/supabase/client';
 import { 
   TrendingUp, 
   Flame, 
@@ -23,19 +24,64 @@ export default function MyProgressPage() {
   const [profile, setProfile] = useState<Profile>(DEMO_USER_PROFILE);
   const [checkins, setCheckins] = useState<DailyCheckin[]>([]);
   const [filterPeriod, setFilterPeriod] = useState<'7days' | '30days' | 'month' | 'all'>('30days');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const sess = localStorage.getItem('lumnicore_session');
-      if (sess) {
-        try {
-          const parsed = JSON.parse(sess);
-          if (parsed.user) setProfile(parsed.user);
-        } catch {}
+    async function loadProgressData() {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (user) {
+          const { data: profData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .maybeSingle();
+
+          if (profData) setProfile(profData as Profile);
+
+          const { data: userCheckins } = await supabase
+            .from('daily_checkins')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('checkin_date', { ascending: false });
+
+          if (userCheckins) {
+            setCheckins(userCheckins as DailyCheckin[]);
+          } else {
+            setCheckins([]);
+          }
+        } else {
+          if (typeof window !== 'undefined') {
+            const sess = localStorage.getItem('lumnicore_session');
+            if (sess) {
+              try {
+                const parsed = JSON.parse(sess);
+                if (parsed.user) setProfile(parsed.user);
+              } catch {}
+            }
+            const localCheckinsStr = localStorage.getItem('lumnicore_checkins');
+            if (localCheckinsStr) {
+              try {
+                setCheckins(JSON.parse(localCheckinsStr));
+              } catch {
+                setCheckins([]);
+              }
+            } else {
+              setCheckins([]);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error loading progress data:', err);
+        setCheckins([]);
+      } finally {
+        setLoading(false);
       }
     }
-    const demoData = generateDemoCheckins();
-    setCheckins(demoData);
+
+    loadProgressData();
   }, []);
 
   const todayStr = getISTDateString();
@@ -62,26 +108,30 @@ export default function MyProgressPage() {
   }, [checkins, filterPeriod]);
 
   // Metrics
-  const total = filteredCheckins.length || 1;
-  const overallAvgScore = Math.round(
-    filteredCheckins.reduce((acc, c) => acc + c.daily_score, 0) / total
-  );
+  const hasCheckins = filteredCheckins.length > 0;
+  const total = filteredCheckins.length;
+  const overallAvgScore = hasCheckins
+    ? Math.round(filteredCheckins.reduce((acc, c) => acc + c.daily_score, 0) / total)
+    : 0;
   const perfectDaysCount = filteredCheckins.filter((c) => c.daily_score === 100).length;
-  const avgFocusHrs = (
-    filteredCheckins.reduce((acc, c) => acc + Number(c.focused_hours || 0), 0) / total
-  ).toFixed(1);
+  const avgFocusHrs = hasCheckins
+    ? (filteredCheckins.reduce((acc, c) => acc + Number(c.focused_hours || 0), 0) / total).toFixed(1)
+    : '0.0';
 
-  const mostMissed = calculateMostMissedTask(filteredCheckins);
+  const mostMissed = hasCheckins ? calculateMostMissedTask(filteredCheckins) : 'None';
 
   // Strongest task
-  const wakeRate = filteredCheckins.filter((c) => c.wake_up_completed).length / total;
-  const sleepRate = filteredCheckins.filter((c) => c.sleep_completed).length / total;
-  const cleanRate = filteredCheckins.filter((c) => c.ate_clean_status === 'Yes').length / total;
+  let strongestTask = 'None';
+  if (hasCheckins) {
+    const wakeRate = filteredCheckins.filter((c) => c.wake_up_completed).length / total;
+    const sleepRate = filteredCheckins.filter((c) => c.sleep_completed).length / total;
+    const cleanRate = filteredCheckins.filter((c) => c.ate_clean_status === 'Yes').length / total;
 
-  let strongestTask = 'Wake Up';
-  let maxRate = wakeRate;
-  if (sleepRate > maxRate) { strongestTask = 'Sleep'; maxRate = sleepRate; }
-  if (cleanRate > maxRate) { strongestTask = 'Clean Eating'; maxRate = cleanRate; }
+    strongestTask = 'Wake Up';
+    let maxRate = wakeRate;
+    if (sleepRate > maxRate) { strongestTask = 'Sleep'; maxRate = sleepRate; }
+    if (cleanRate > maxRate) { strongestTask = 'Clean Eating'; maxRate = cleanRate; }
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">

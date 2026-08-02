@@ -49,10 +49,10 @@ export default function UserDashboard() {
             .eq('user_id', user.id)
             .order('checkin_date', { ascending: false });
 
-          if (userCheckins && userCheckins.length > 0) {
+          if (userCheckins) {
             setCheckins(userCheckins as DailyCheckin[]);
           } else {
-            setCheckins(generateDemoCheckins());
+            setCheckins([]);
           }
         } else {
           if (typeof window !== 'undefined') {
@@ -68,16 +68,16 @@ export default function UserDashboard() {
               try {
                 setCheckins(JSON.parse(localCheckinsStr));
               } catch {
-                setCheckins(generateDemoCheckins());
+                setCheckins([]);
               }
             } else {
-              setCheckins(generateDemoCheckins());
+              setCheckins([]);
             }
           }
         }
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
-        setCheckins(generateDemoCheckins());
+        setCheckins([]);
       } finally {
         setLoading(false);
       }
