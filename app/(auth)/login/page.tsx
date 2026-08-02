@@ -30,28 +30,18 @@ export default function LoginPage() {
       });
 
       if (authErr) {
-        // Fallback for demo logins if Supabase account hasn't been created yet
-        let demoProfile = DEMO_USER_PROFILE;
-        if (email.toLowerCase().includes('admin')) {
-          demoProfile = DEMO_ADMIN_PROFILE;
-        } else {
-          demoProfile = {
-            ...DEMO_USER_PROFILE,
-            email,
-            full_name: email.split('@')[0].replace('.', ' '),
-          };
+        // If it's explicitly demo user/admin button fill, allow demo bypass
+        if (email === 'admin@lumnicore.com' || email === 'user@lumnicore.com') {
+          let demoProfile = email === 'admin@lumnicore.com' ? DEMO_ADMIN_PROFILE : DEMO_USER_PROFILE;
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('lumnicore_session', JSON.stringify({ user: demoProfile }));
+          }
+          router.push(demoProfile.role === 'admin' ? '/admin' : '/dashboard');
+          return;
         }
 
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('lumnicore_session', JSON.stringify({ user: demoProfile }));
-        }
-
-        if (demoProfile.role === 'admin') {
-          router.push('/admin');
-        } else {
-          router.push('/dashboard');
-        }
-        return;
+        // Display real Supabase Auth error for custom registered emails
+        throw new Error(authErr.message || 'Invalid email or password.');
       }
 
       // Fetch logged-in user profile from Supabase profiles table

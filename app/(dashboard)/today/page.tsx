@@ -44,11 +44,15 @@ export default function TodayCheckinPage() {
           }
         } else {
           // Fallback for demo session in local storage
+          let activeProfile = profile;
           const sess = localStorage.getItem('lumnicore_session');
           if (sess) {
             try {
               const parsed = JSON.parse(sess);
-              if (parsed.user) setProfile(parsed.user);
+              if (parsed.user) {
+                activeProfile = parsed.user;
+                setProfile(parsed.user);
+              }
             } catch {}
           }
           const todayStr = getISTDateString();
@@ -56,13 +60,9 @@ export default function TodayCheckinPage() {
           if (localCheckinsStr) {
             try {
               const localCheckins: DailyCheckin[] = JSON.parse(localCheckinsStr);
-              const found = localCheckins.find((c) => c.checkin_date === todayStr);
+              const found = localCheckins.find((c) => c.user_id === activeProfile.id && c.checkin_date === todayStr);
               if (found) setTodayData(found);
             } catch {}
-          } else {
-            const demo = generateDemoCheckins();
-            const existing = demo.find((c) => c.checkin_date === todayStr);
-            if (existing) setTodayData(existing);
           }
         }
       } catch (err) {
@@ -133,7 +133,7 @@ export default function TodayCheckinPage() {
           localCheckins = JSON.parse(localCheckinsStr);
         } catch {}
       }
-      const filtered = localCheckins.filter((c) => c.checkin_date !== todayStr);
+      const filtered = localCheckins.filter((c) => !(c.user_id === userId && c.checkin_date === todayStr));
       localStorage.setItem('lumnicore_checkins', JSON.stringify([...filtered, newRecord]));
     }
   };

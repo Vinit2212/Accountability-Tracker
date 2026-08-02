@@ -54,19 +54,23 @@ export default function UserDashboard() {
           } else {
             setCheckins([]);
           }
-        } else {
+          let activeProf = profile;
           if (typeof window !== 'undefined') {
             const sess = localStorage.getItem('lumnicore_session');
             if (sess) {
               try {
                 const parsed = JSON.parse(sess);
-                if (parsed.user) setProfile(parsed.user);
+                if (parsed.user) {
+                  activeProf = parsed.user;
+                  setProfile(parsed.user);
+                }
               } catch {}
             }
             const localCheckinsStr = localStorage.getItem('lumnicore_checkins');
             if (localCheckinsStr) {
               try {
-                setCheckins(JSON.parse(localCheckinsStr));
+                const allLocal: DailyCheckin[] = JSON.parse(localCheckinsStr);
+                setCheckins(allLocal.filter((c) => c.user_id === activeProf.id));
               } catch {
                 setCheckins([]);
               }

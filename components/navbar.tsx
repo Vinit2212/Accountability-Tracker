@@ -18,6 +18,7 @@ import {
   X 
 } from 'lucide-react';
 import { UserRole } from '@/lib/types';
+import { createClient } from '@/lib/supabase/client';
 
 interface NavbarProps {
   userRole?: UserRole;
@@ -52,7 +53,12 @@ export default function Navbar({ userRole = 'user', userEmail, userName }: Navba
   const navItems = isAdmin ? adminNavItems : userNavItems;
 
   const handleLogout = async () => {
-    // Navigate to login after clearing mock session
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
     if (typeof window !== 'undefined') {
       localStorage.removeItem('lumnicore_session');
     }

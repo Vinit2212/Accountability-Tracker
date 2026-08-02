@@ -53,6 +53,10 @@ export default function SignupPage() {
         },
       });
 
+      if (authErr) {
+        throw new Error(authErr.message || 'Registration failed.');
+      }
+
       let userProfile: Profile = {
         id: authData?.user?.id || `usr-${Date.now()}`,
         full_name: fullName,
